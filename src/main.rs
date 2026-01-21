@@ -1,5 +1,20 @@
 use bevy::prelude::*;
 
+mod components;
+mod systems;
+mod rendering;
+mod constants;
+
+use components::player::Player;
+use components::combat::Bat;
+
+use systems::movement::player_movement;
+use systems::combat::{bat_show_hide, bat_attack};
+use systems::camera::camera_follow;
+
+
+use rendering::isometric::{setup_isometric_camera, spawn_isometric_map};
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -11,48 +26,46 @@ fn main() {
             }),
             ..default()
         }))
-        .add_systems(Startup, setup)
-        .add_systems(Update, camera_controls)
+        .add_systems(Startup, (
+            setup_isometric_camera,  
+            spawn_isometric_map,     
+            setup_player,            
+        ))
+
+        .add_systems(Update, (
+            player_movement,
+            bat_show_hide,
+            bat_attack,
+            camera_follow,
+        ))
         .run();
 }
 
-#[derive(Component)]
-struct TestSprite;
 
-fn setup(mut commands: Commands) {
-    commands.spawn((
-        Camera2d,
-        Transform::from_xyz(0.0, 0.0, 1000.0),
-    ));
-
-    commands.spawn((
+fn setup_player(mut commands: Commands) {
+ 
+    let player_entity = commands.spawn((
         Sprite {
-            color: Color::srgb(0.8, 0.2, 0.2),
-            custom_size: Some(Vec2::new(64.0, 64.0)),
+            color: Color::srgb(0.0, 0.8, 0.0),
+            custom_size: Some(Vec2::new(32.0, 48.0)),
             ..default()
         },
-        TestSprite,
-    ));
-}
+        Transform::from_xyz(0.0, 0.0, 10.0), 
+        Player,
+    )).id();
 
-fn camera_controls(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut camera_query: Query<&mut Transform, With<Camera>>,
-    time: Res<Time>,
-) {
-    let mut camera_transform = camera_query.single_mut();
-    let speed = 300.0;
+    commands.entity(player_entity).with_children(|parent| {
+        parent.spawn((
+            Sprite {
+                color: Color::srgb(0.7, 0.5, 0.2),
+                custom_size: Some(Vec2::new(64.0, 24.0)),
+                ..default()
+            },
+            Transform::from_xyz(20.0, 0.0, 1.0),
+            Visibility::Hidden,
+            Bat,
+        ));
+    });
     
-    if keyboard.pressed(KeyCode::KeyW) {
-        camera_transform.translation.y += speed * time.delta_secs();
-    }
-    if keyboard.pressed(KeyCode::KeyS) {
-        camera_transform.translation.y -= speed * time.delta_secs();
-    }
-    if keyboard.pressed(KeyCode::KeyA) {
-        camera_transform.translation.x -= speed * time.delta_secs();
-    }
-    if keyboard.pressed(KeyCode::KeyD) {
-        camera_transform.translation.x += speed * time.delta_secs();
-    }
+    println!("Player created");
 }
