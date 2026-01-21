@@ -1,16 +1,21 @@
 use bevy::prelude::*;
 
-#[derive(Component)]
-struct Player;
 
-#[derive(Component)]
-struct Bat;
+mod components;
+mod systems;
+mod rendering;
+mod constants;
 
-#[derive(Component)]
-struct Tile {
-    x: i32,
-    y: i32
-}
+use components::player::Player;
+use components::combat::Bat;
+use components::world::Tile;
+
+use systems::movement::player_movement;
+use systems::combat::{bat_show_hide, bat_attack};
+use systems::camera::camera_follow;
+
+
+use rendering::isometric::{setup_isometric_camera, spawn_isometric_map};
 
 fn main() {
     App::new()
@@ -23,24 +28,29 @@ fn main() {
             }),
             ..default()
         }))
-        .add_systems(Startup, setup)
-        .add_systems(Update, (player_movement, bat_show_hide, bat_attack, camera_follow))
+        .add_systems(Startup, (
+            setup_isometric_camera,  
+            spawn_isometric_map,   
+            setup_player,          
+        ))
+
+        .add_systems(Update, (
+            player_movement,
+            bat_show_hide,
+            bat_attack,
+            camera_follow,
+        ))
         .run();
 }
 
-fn setup(mut commands: Commands) {
-    commands.spawn((
-        Camera2d,
-        Transform::from_xyz(0.0, 0.0, 5.0),
-    ));
-
+fn setup_player(mut commands: Commands) {
     let player_entity = commands.spawn((
         Sprite {
             color: Color::srgb(0.0, 0.8, 0.0),
             custom_size: Some(Vec2::new(32.0, 48.0)),
             ..default()
         },
-        Transform::from_xyz(0.0, 0.0, 2.0),
+        Transform::from_xyz(0.0, 0.0, 10.0),
         Player,
     )).id();
 
@@ -56,88 +66,6 @@ fn setup(mut commands: Commands) {
             Bat,
         ));
     });
-
-    let map_size = 25;
-    let tile_size = 32.0;
     
-    for x in -map_size..=map_size {
-        for y in -map_size..=map_size {
-            let color = if (x + y) % 2 == 0 {
-                Color::srgb(0.2, 0.6, 0.2)
-            } else {
-                Color::srgb(0.1, 0.4, 0.1)
-            };
-            
-            commands.spawn((
-                Sprite {
-                    color,
-                    custom_size: Some(Vec2::new(tile_size, tile_size)),
-                    ..default()
-                },
-                Transform::from_xyz(
-                    x as f32 * tile_size,
-                    y as f32 * tile_size,
-                    0.0
-                ),
-                Tile { x: x as i32, y: y as i32 }
-            ));
-        }
-    }
-}
-
-fn player_movement(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    time: Res<Time>,
-    mut query: Query<&mut Transform, With<Player>>,
-) {
-    let mut transform = query.single_mut();
-    let speed = 200.0;
-    let mut direction = Vec2::ZERO;
-    
-    if keyboard.pressed(KeyCode::KeyW) { direction.y += 1.0; }
-    if keyboard.pressed(KeyCode::KeyS) { direction.y -= 1.0; }
-    if keyboard.pressed(KeyCode::KeyA) { direction.x -= 1.0; }
-    if keyboard.pressed(KeyCode::KeyD) { direction.x += 1.0; }
-    
-    if direction.length() > 0.1 {
-        direction = direction.normalize();
-        transform.translation += direction.extend(0.0) * speed * time.delta_secs();
-    }
-}
-
-fn bat_show_hide(
-    mouse: Res<ButtonInput<MouseButton>>,
-    mut bat_query: Query<&mut Visibility, With<Bat>>,
-) {
-    let visible = mouse.pressed(MouseButton::Left);
-    if let Ok(mut visibility) = bat_query.get_single_mut() {
-        *visibility = if visible { Visibility::Visible } else { Visibility::Hidden };
-    }
-}
-
-fn bat_attack(
-    mouse: Res<ButtonInput<MouseButton>>,
-    mut bat_query: Query<&mut Transform, With<Bat>>,
-) {
-    if mouse.just_pressed(MouseButton::Right) {
-        println!("💥 УДАР БИТОЙ!");
-        
-        if let Ok(mut bat_transform) = bat_query.get_single_mut() {
-            bat_transform.rotation = Quat::from_rotation_z(std::f32::consts::FRAC_PI_4);
-        }
-    }
-}
-
-fn camera_follow(
-    player_query: Query<&Transform, With<Player>>,
-    mut camera_query: Query<&mut Transform, (With<Camera2d>, Without<Player>)>,
-) {
-    let player_transform = player_query.single();
-    let mut camera_transform = camera_query.single_mut();
-    
-    camera_transform.translation = Vec3::new(
-        player_transform.translation.x,
-        player_transform.translation.y,
-        5.0
-    );
+    println!("Player created");
 }
