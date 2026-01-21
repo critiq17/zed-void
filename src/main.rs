@@ -1,5 +1,17 @@
 use bevy::prelude::*;
 
+#[derive(Component)]
+struct Player;
+
+#[derive(Component)]
+struct Bat;
+
+#[derive(Component)]
+struct Tile {
+    x: i32,
+    y: i32
+}
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -12,47 +24,120 @@ fn main() {
             ..default()
         }))
         .add_systems(Startup, setup)
-        .add_systems(Update, camera_controls)
+        .add_systems(Update, (player_movement, bat_show_hide, bat_attack, camera_follow))
         .run();
 }
-
-#[derive(Component)]
-struct TestSprite;
 
 fn setup(mut commands: Commands) {
     commands.spawn((
         Camera2d,
-        Transform::from_xyz(0.0, 0.0, 1000.0),
+        Transform::from_xyz(0.0, 0.0, 5.0),
     ));
 
-    commands.spawn((
+    let player_entity = commands.spawn((
         Sprite {
-            color: Color::srgb(0.8, 0.2, 0.2),
-            custom_size: Some(Vec2::new(64.0, 64.0)),
+            color: Color::srgb(0.0, 0.8, 0.0),
+            custom_size: Some(Vec2::new(32.0, 48.0)),
             ..default()
         },
-        TestSprite,
-    ));
+        Transform::from_xyz(0.0, 0.0, 2.0),
+        Player,
+    )).id();
+
+    commands.entity(player_entity).with_children(|parent| {
+        parent.spawn((
+            Sprite {
+                color: Color::srgb(0.7, 0.5, 0.2),
+                custom_size: Some(Vec2::new(64.0, 24.0)),
+                ..default()
+            },
+            Transform::from_xyz(20.0, 0.0, 1.0),
+            Visibility::Hidden,
+            Bat,
+        ));
+    });
+
+    let map_size = 25;
+    let tile_size = 32.0;
+    
+    for x in -map_size..=map_size {
+        for y in -map_size..=map_size {
+            let color = if (x + y) % 2 == 0 {
+                Color::srgb(0.2, 0.6, 0.2)
+            } else {
+                Color::srgb(0.1, 0.4, 0.1)
+            };
+            
+            commands.spawn((
+                Sprite {
+                    color,
+                    custom_size: Some(Vec2::new(tile_size, tile_size)),
+                    ..default()
+                },
+                Transform::from_xyz(
+                    x as f32 * tile_size,
+                    y as f32 * tile_size,
+                    0.0
+                ),
+                Tile { x: x as i32, y: y as i32 }
+            ));
+        }
+    }
 }
 
-fn camera_controls(
+fn player_movement(
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut camera_query: Query<&mut Transform, With<Camera>>,
     time: Res<Time>,
+    mut query: Query<&mut Transform, With<Player>>,
 ) {
-    let mut camera_transform = camera_query.single_mut();
-    let speed = 300.0;
+    let mut transform = query.single_mut();
+    let speed = 200.0;
+    let mut direction = Vec2::ZERO;
     
-    if keyboard.pressed(KeyCode::KeyW) {
-        camera_transform.translation.y += speed * time.delta_secs();
+    if keyboard.pressed(KeyCode::KeyW) { direction.y += 1.0; }
+    if keyboard.pressed(KeyCode::KeyS) { direction.y -= 1.0; }
+    if keyboard.pressed(KeyCode::KeyA) { direction.x -= 1.0; }
+    if keyboard.pressed(KeyCode::KeyD) { direction.x += 1.0; }
+    
+    if direction.length() > 0.1 {
+        direction = direction.normalize();
+        transform.translation += direction.extend(0.0) * speed * time.delta_secs();
     }
-    if keyboard.pressed(KeyCode::KeyS) {
-        camera_transform.translation.y -= speed * time.delta_secs();
+}
+
+fn bat_show_hide(
+    mouse: Res<ButtonInput<MouseButton>>,
+    mut bat_query: Query<&mut Visibility, With<Bat>>,
+) {
+    let visible = mouse.pressed(MouseButton::Left);
+    if let Ok(mut visibility) = bat_query.get_single_mut() {
+        *visibility = if visible { Visibility::Visible } else { Visibility::Hidden };
     }
-    if keyboard.pressed(KeyCode::KeyA) {
-        camera_transform.translation.x -= speed * time.delta_secs();
+}
+
+fn bat_attack(
+    mouse: Res<ButtonInput<MouseButton>>,
+    mut bat_query: Query<&mut Transform, With<Bat>>,
+) {
+    if mouse.just_pressed(MouseButton::Right) {
+        println!("💥 УДАР БИТОЙ!");
+        
+        if let Ok(mut bat_transform) = bat_query.get_single_mut() {
+            bat_transform.rotation = Quat::from_rotation_z(std::f32::consts::FRAC_PI_4);
+        }
     }
-    if keyboard.pressed(KeyCode::KeyD) {
-        camera_transform.translation.x += speed * time.delta_secs();
-    }
+}
+
+fn camera_follow(
+    player_query: Query<&Transform, With<Player>>,
+    mut camera_query: Query<&mut Transform, (With<Camera2d>, Without<Player>)>,
+) {
+    let player_transform = player_query.single();
+    let mut camera_transform = camera_query.single_mut();
+    
+    camera_transform.translation = Vec3::new(
+        player_transform.translation.x,
+        player_transform.translation.y,
+        5.0
+    );
 }
