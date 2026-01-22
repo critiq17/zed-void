@@ -21,10 +21,12 @@ pub mod colors {
     pub const GRASS_DARK: Color = Color::srgb(0.2, 0.6, 0.2);
     pub const DIRT: Color = Color::srgb(0.6, 0.5, 0.3);
     pub const STONE: Color = Color::srgb(0.5, 0.5, 0.5);
+    pub const HOUSE: Color = Color::srgb(0.6, 0.4, 0.2);
     
     pub const PLAYER: Color = Color::srgb(0.0, 0.8, 0.0);
     pub const BAT: Color = Color::srgb(0.7, 0.5, 0.2);
 }
+
 
 
 pub mod z_index {

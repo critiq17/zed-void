@@ -5,6 +5,8 @@ edition = "2024"
 
 [dependencies]
 # Bevy - игровой движок
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
 bevy = { version = "0.15", features = [
     "dynamic_linking", # Быстрая компиляция (только для разработки)
 ] }
