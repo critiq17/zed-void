@@ -1,3 +1,5 @@
 pub mod player;  
 pub mod combat;   
 pub mod world;
+pub mod animation;
+pub mod z_layer; 

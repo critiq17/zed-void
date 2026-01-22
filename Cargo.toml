@@ -16,6 +16,9 @@ bevy = { version = "0.15", features = [
 # serde = { version = "1.0", features = ["derive"] }  # Для сохранений (неделя 3)
 # rand = "0.8"  # Для генерации зомби (неделя 2)
 
+[dev-dependencies]
+proptest = "1.4"
+
 # Оптимизация для dev режима (быстрая компиляция)
 [profile.dev]
 opt-level = 1
