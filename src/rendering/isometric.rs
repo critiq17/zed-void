@@ -66,11 +66,11 @@ pub fn spawn_isometric_map(mut commands: Commands) {
 pub fn spawn_map_from_json(mut commands: Commands) {
     match load_map("assets/world_map_v1.json") {
         Ok(map) => {
-            println!("✅ Map loaded: {}x{}", map.width, map.height);
+            println!("Map loaded: {}x{}", map.width, map.height);
             render_tiled_map(&map, &mut commands);
         }
         Err(e) => {
-            println!("❌ Map error: {}. Using procedural.", e);
+            println!("Map error: {}. Using procedural.", e);
             spawn_isometric_map(commands);  // ← ФИКС: убрал &mut
         }
     }
@@ -80,9 +80,9 @@ fn load_map(path: &str) -> Result<TiledMap, String> {
     match fs::read_to_string(path) {
         Ok(content) => match serde_json::from_str(&content) {
             Ok(map) => Ok(map),
-            Err(e) => Err(format!("JSON ошибка: {}", e)),
+            Err(e) => Err(format!("JSON error: {}", e)),
         },
-        Err(e) => Err(format!("Файл не найден: {}", e)),
+        Err(e) => Err(format!("File not found: {}", e)),
     }
 }
 
@@ -98,18 +98,18 @@ fn render_tiled_map(map: &TiledMap, commands: &mut Commands) {
             let y = (i as u32 / layer.width) as i32;
             let screen_pos = grid_to_screen(x, y);
             
-            // 🎨 ПРЯМО Color для каждого ID!
+         
             let color = match tile_id {
-                1..=49 => TileType::GrassLight.color(),     // светло-зеленый
-                50     => TileType::GrassDark.color(),      // темно-зеленый
+                1..=49 => TileType::GrassLight.color(),    
+                50     => TileType::GrassDark.color(),      
                 51     => TileType::GrassLight.color(),
-                52     => TileType::Stone.color(),          // серый
+                52     => TileType::Stone.color(),      
                 53..=60 => TileType::GrassDark.color(),
-                61..=76 => TileType::Dirt.color(),          // коричневый
-                77     => Color::srgb(0.1, 0.3, 0.8),      // 💧 ВОДА синяя!
-                78..=90 => TileType::Stone.color(),         // дороги
-                91..=104 => Color::srgb(0.6, 0.4, 0.2),    // 🏠 ДОМА коричневые
-                105    => Color::srgb(0.4, 0.2, 0.1),      // темные дома
+                61..=76 => TileType::Dirt.color(),      
+                77     => Color::srgb(0.1, 0.3, 0.8),   
+                78..=90 => TileType::Stone.color(),     
+                91..=104 => Color::srgb(0.6, 0.4, 0.2),  
+                105    => Color::srgb(0.4, 0.2, 0.1),  
                 _ => TileType::GrassDark.color(),
             };
 

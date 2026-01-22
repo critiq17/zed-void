@@ -12,7 +12,7 @@ use systems::movement::player_movement;
 use systems::combat::{bat_show_hide, bat_attack};
 use systems::camera::camera_follow;
 
-use rendering::isometric::{setup_isometric_camera, spawn_map_from_json}; // ← ИЗМЕНИЛ!
+use rendering::isometric::{setup_isometric_camera, spawn_map_from_json};
 
 fn main() {
     App::new()
@@ -27,7 +27,7 @@ fn main() {
         }))
         .add_systems(Startup, (
             setup_isometric_camera,  
-            spawn_map_from_json,     // ← НОВАЯ КАРТА!
+            spawn_map_from_json,    
             setup_player,            
         ))
         .add_systems(Update, (
@@ -39,7 +39,7 @@ fn main() {
         .run();
 }
 
-// setup_player остается ТАКИМ ЖЕ!
+
 fn setup_player(mut commands: Commands) {
     let player_entity = commands.spawn((
         Sprite {
