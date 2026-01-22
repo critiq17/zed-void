@@ -12,8 +12,7 @@ use systems::movement::player_movement;
 use systems::combat::{bat_show_hide, bat_attack};
 use systems::camera::camera_follow;
 
-
-use rendering::isometric::{setup_isometric_camera, spawn_isometric_map};
+use rendering::isometric::{setup_isometric_camera, spawn_map_from_json}; // ← ИЗМЕНИЛ!
 
 fn main() {
     App::new()
@@ -28,10 +27,9 @@ fn main() {
         }))
         .add_systems(Startup, (
             setup_isometric_camera,  
-            spawn_isometric_map,     
+            spawn_map_from_json,     // ← НОВАЯ КАРТА!
             setup_player,            
         ))
-
         .add_systems(Update, (
             player_movement,
             bat_show_hide,
@@ -41,9 +39,8 @@ fn main() {
         .run();
 }
 
-
+// setup_player остается ТАКИМ ЖЕ!
 fn setup_player(mut commands: Commands) {
- 
     let player_entity = commands.spawn((
         Sprite {
             color: Color::srgb(0.0, 0.8, 0.0),
@@ -66,6 +63,5 @@ fn setup_player(mut commands: Commands) {
             Bat,
         ));
     });
-    
     println!("Player created");
 }

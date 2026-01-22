@@ -1,5 +1,33 @@
 use bevy::prelude::*;
 
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize, Serialize, Clone, Copy, Debug, PartialEq)]
+pub enum MapTileType {
+    Empty,
+    GrassLight,
+    GrassDark, 
+    Dirt,
+    Stone,
+    House,
+}
+
+#[derive(Deserialize)]
+pub struct MapLayer {
+    pub name: String,
+    pub data: Vec<u32>,
+    pub width: u32,
+    pub height: u32,
+}
+
+#[derive(Deserialize)]
+pub struct TiledMap {
+    pub width: u32,
+    pub height: u32,
+    pub tilewidth: u32,
+    pub tileheight: u32,
+    pub layers: Vec<MapLayer>,
+}
 
 #[derive(Component, Clone, Copy)]
 pub struct Tile {
