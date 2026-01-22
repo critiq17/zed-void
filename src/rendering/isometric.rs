@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy::render::camera::{ScalingMode, OrthographicProjection};
 use serde::Deserialize;
 use std::fs;
 
@@ -21,8 +20,13 @@ struct TiledMap {
     layers: Vec<MapLayer>,
 }
 
+#[derive(Resource)]
+pub struct TilesetHandle {
+    pub texture: Handle<Image>,
+    pub layout: Handle<TextureAtlasLayout>,
+}
+
 pub fn grid_to_screen(grid_x: i32, grid_y: i32) -> Vec2 {
-    // Изометрическая формула
     let x = (grid_x - grid_y) as f32 * TILE_SIZE / 2.0;
     let y = -(grid_x + grid_y) as f32 * TILE_HEIGHT / 4.0;  
     Vec2::new(x, y)
@@ -39,21 +43,46 @@ pub fn setup_isometric_camera(mut commands: Commands) {
     camera.projection.scale = 0.5;
     camera.transform.translation.z = 999.0;
     commands.spawn(camera);
-    println!("Camera created!");
+    println!("✓ Camera created!");
 }
 
+pub fn load_tileset(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
+) {
+    let texture_handle = asset_server.load("isometric_tiles.png");
+    
+    let atlas_layout = TextureAtlasLayout::from_grid(
+        UVec2::new(64, 32),  // Изометрический тайл
+        13,  // columns (13 тайлов в ширину)
+        11,  // rows (11 рядов)
+        None,
+        None,
+    );
+    let atlas_layout_handle = texture_atlases.add(atlas_layout);
+    
+    commands.insert_resource(TilesetHandle {
+        texture: texture_handle,
+        layout: atlas_layout_handle,
+    });
+    
+    println!("✓ Isometric tileset loaded: 13x11 tiles (64x32 each)");
+}
 
-
-pub fn spawn_map_from_json(mut commands: Commands) {
+pub fn spawn_map_from_json(
+    mut commands: Commands,
+    tileset: Res<TilesetHandle>,
+) {
     match load_map("assets/world_map_v1.json") {
         Ok(map) => {
-            println!(" Map loaded: {}x{}", map.width, map.height);
-            render_tiled_map(&map, &mut commands);
+            println!("✓ Map loaded: {}x{}", map.width, map.height);
+            render_tiled_map(&map, &mut commands, &tileset);
         }
         Err(e) => {
-            println!(" Error loading map: {}", e);
-            println!(" Generating map...");
-            spawn_procedural_map(commands);
+            println!("Error loading map: {}", e);
+            println!("Generating procedural map...");
+            spawn_procedural_map(commands, tileset);
         }
     }
 }
@@ -68,15 +97,14 @@ fn load_map(path: &str) -> Result<TiledMap, String> {
     }
 }
 
-fn render_tiled_map(map: &TiledMap, commands: &mut Commands) {
+fn render_tiled_map(map: &TiledMap, commands: &mut Commands, tileset: &TilesetHandle) {
     let mut tile_count = 0;
     
-    // Центрируем карту
     let offset_x = -(map.width as i32) / 2;
     let offset_y = -(map.height as i32) / 2;
     
     for layer in &map.layers {
-        println!("  Layer : {}", layer.name);
+        println!("  Rendering layer: {}", layer.name);
         
         for (index, &tile_id) in layer.data.iter().enumerate() {
             if tile_id == 0 { continue; }
@@ -85,12 +113,16 @@ fn render_tiled_map(map: &TiledMap, commands: &mut Commands) {
             let y = (index as u32 / layer.width) as i32 + offset_y;
 
             let screen_pos = grid_to_screen(x, y);
+            let (z, tile_type) = get_tile_properties(tile_id);
             
-            let (color, z, tile_type) = get_tile_properties(tile_id);
-        
+            // Используем спрайт с текстурой из атласа
             commands.spawn((
                 Sprite {
-                    color,
+                    image: tileset.texture.clone(),
+                    texture_atlas: Some(TextureAtlas {
+                        layout: tileset.layout.clone(),
+                        index: (tile_id - 1) as usize, // tile_id начинается с 1
+                    }),
                     custom_size: Some(Vec2::new(TILE_SIZE, TILE_HEIGHT)),
                     ..default()
                 },
@@ -102,63 +134,23 @@ fn render_tiled_map(map: &TiledMap, commands: &mut Commands) {
         }
     }
     
-    println!("Created {} tails!", tile_count);
+    println!(" Created {} tiles!", tile_count);
 }
 
-fn get_tile_properties(tile_id: u32) -> (Color, f32, TileType) {
-    use crate::constants::colors;
-    
+fn get_tile_properties(tile_id: u32) -> (f32, TileType) {
     match tile_id {
-        1..=49 | 51 | 53..=60 => (
-            colors::GRASS_LIGHT,
-            z_index::GROUND,
-            TileType::GrassLight,
-        ),
-        50 => (
-            colors::GRASS_DARK,
-            z_index::GROUND,
-            TileType::GrassDark,
-        ),
-
-        52 | 78..=90 => (
-            colors::ROAD,
-            z_index::ROADS,
-            TileType::Stone,
-        ),
-        
-
-        61..=76 => (
-            colors::DIRT,
-            z_index::GROUND,
-            TileType::Dirt,
-        ),
-        
-        77 => (
-            colors::WATER,
-            z_index::WATER,
-            TileType::Water,
-        ),
-        
-        91..=104 => (
-            colors::HOUSE_WALL,
-            z_index::BUILDINGS,
-            TileType::Stone,
-        ),
-        105 => (
-            colors::HOUSE_ROOF,
-            z_index::BUILDINGS,
-            TileType::Stone,
-        ),
-    
-        _ => (
-            colors::GRASS_DARK,
-            z_index::GROUND,
-            TileType::GrassDark,
-        ),
+        1..=49 | 51 | 53..=60 => (z_index::GROUND, TileType::GrassLight),
+        50 => (z_index::GROUND, TileType::GrassDark),
+        52 | 78..=90 => (z_index::ROADS, TileType::Stone),
+        61..=76 => (z_index::GROUND, TileType::Dirt),
+        77 => (z_index::WATER, TileType::Water),
+        91..=104 => (z_index::BUILDINGS, TileType::Stone),
+        105 => (z_index::BUILDINGS, TileType::Stone),
+        _ => (z_index::GROUND, TileType::GrassDark),
     }
 }
 
-fn spawn_procedural_map(mut commands: Commands) {
+fn spawn_procedural_map(mut commands: Commands, tileset: TilesetHandle) {
     let map_size = 30;
     let mut tile_count = 0;
     
@@ -171,10 +163,15 @@ fn spawn_procedural_map(mut commands: Commands) {
             };
             
             let screen_pos = grid_to_screen(grid_x, grid_y);
+            let tile_index = if tile_type == TileType::GrassLight { 0 } else { 49 };
             
             commands.spawn((
                 Sprite {
-                    color: tile_type.color(),
+                    image: tileset.texture.clone(),
+                    texture_atlas: Some(TextureAtlas {
+                        layout: tileset.layout.clone(),
+                        index: tile_index,
+                    }),
                     custom_size: Some(Vec2::new(TILE_SIZE, TILE_HEIGHT)),
                     ..default()
                 },
@@ -186,5 +183,5 @@ fn spawn_procedural_map(mut commands: Commands) {
         }
     }
     
-    println!("{} tails", tile_count);
+    println!("✓ Generated {} tiles", tile_count);
 }
