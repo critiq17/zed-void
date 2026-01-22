@@ -4,7 +4,7 @@ use crate::components::animation::{AnimationController, AnimationType};
 pub fn animate_sprites(
     time: Res<Time>,
     mut query: Query<(&mut AnimationController, &mut Sprite)>,
-    atlas_handles: Query<&Handle<TextureAtlasLayout>>,
+    _atlas_handles: Res<Assets<TextureAtlasLayout>>,
 ) {
     for (mut controller, mut _sprite) in query.iter_mut() {
         controller.frame_timer.tick(time.delta());

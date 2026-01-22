@@ -1,6 +1,8 @@
 use bevy::prelude::*;
+use bevy::render::camera::{ScalingMode, OrthographicProjection};
 use serde::Deserialize;
 use std::fs;
+
 use crate::components::world::{Tile, TileType};
 use crate::constants::{TILE_SIZE, TILE_HEIGHT, z_index};
 
@@ -33,21 +35,15 @@ pub fn screen_to_grid(screen_x: f32, screen_y: f32) -> (i32, i32) {
 }
 
 pub fn setup_isometric_camera(mut commands: Commands) {
-    commands.spawn((
-        Camera2d,
-        OrthographicProjection {
-            scale: 0.5,
-            ..default()
-        },
-        Transform::from_xyz(0.0, 0.0, 999.0),
-    ));
-    
+    let mut camera = Camera2dBundle::default();
+    camera.projection.scale = 0.5;
+    camera.transform.translation.z = 999.0;
+    commands.spawn(camera);
     println!("Camera created!");
 }
 
-// ============================================
-// СИСТЕМА: ЗАГРУЗКА КАРТЫ ИЗ JSON
-// ============================================
+
+
 pub fn spawn_map_from_json(mut commands: Commands) {
     match load_map("assets/world_map_v1.json") {
         Ok(map) => {

@@ -23,7 +23,7 @@ fn main() {
         .add_plugins(DefaultPlugins
             .set(WindowPlugin {
                 primary_window: Some(Window {
-                    title: "Zed Void - День 5-7: Анимация".to_string(),
+                    title: "Zed Void".to_string(),
                     resolution: (1280.0, 720.0).into(),
                     resizable: false,
                     ..default()
