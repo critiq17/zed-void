@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use crate::components::animation::{
-    AnimationController, AnimationType, DirectionalAnimation, AnimationTimer, 
+    AnimationController, AnimationType, DirectionalAnimation, AnimationTimer,
     AnimationState
 };
 
@@ -15,10 +15,10 @@ pub fn animate_directional_sprites(
 ) {
     for (directional_anim, mut timer, mut sprite) in query.iter_mut() {
         timer.0.tick(time.delta());
-        
+
         if timer.0.just_finished() {
             let current_animation = directional_anim.get_current_animation();
-            
+
             if let Some(ref mut texture_atlas) = sprite.texture_atlas {
                 let frame_count = current_animation.frame_count();
                 if frame_count > 1 {
@@ -29,7 +29,7 @@ pub fn animate_directional_sprites(
                     } else {
                         0
                     };
-                    
+
                     let next_relative_frame = (relative_frame + 1) % frame_count;
                     texture_atlas.index = current_animation.first + next_relative_frame;
                 } else {
@@ -49,13 +49,13 @@ pub fn animate_sprites(
 ) {
     for (mut controller, mut sprite) in query.iter_mut() {
         controller.frame_timer.tick(time.delta());
-        
+
         if controller.frame_timer.just_finished() {
             let (start, end) = controller.current_animation.frame_range();
             let frame_count = end - start + 1;
 
             controller.current_frame = (controller.current_frame + 1) % frame_count;
-            
+
             // Update TextureAtlas index to display the correct frame
             if let Some(ref mut texture_atlas) = sprite.texture_atlas {
                 let absolute_frame = start + controller.current_frame;
@@ -102,7 +102,7 @@ pub fn update_animation_from_movement(
     } else {
         AnimationType::WalkDown
     };
-    
+
     controller.set_animation(animation);
 }
 
@@ -112,27 +112,27 @@ pub fn update_directional_animation_state(
     mut query: Query<&mut DirectionalAnimation>,
 ) {
     let mut direction = Vec2::ZERO;
-    
+
     // Check movement input
     if keyboard.pressed(KeyCode::KeyW) {
-        direction.x += 1.0; 
+        direction.x += 1.0;
         direction.y += 1.0;
     }
     if keyboard.pressed(KeyCode::KeyS) {
-        direction.x -= 1.0; 
+        direction.x -= 1.0;
         direction.y -= 1.0;
     }
     if keyboard.pressed(KeyCode::KeyA) {
-        direction.x -= 1.0;  
+        direction.x -= 1.0;
         direction.y += 1.0;
     }
     if keyboard.pressed(KeyCode::KeyD) {
-        direction.x += 1.0;  
+        direction.x += 1.0;
         direction.y -= 1.0;
     }
 
     let is_moving = direction.length() > 0.1;
-    
+
     for mut directional_anim in query.iter_mut() {
         if is_moving {
             // Determine direction based on input
@@ -147,7 +147,7 @@ pub fn update_directional_animation_state(
             } else {
                 crate::components::animation::Direction::Down
             };
-            
+
             directional_anim.set_state_and_direction(AnimationState::Walking, anim_direction);
         } else {
             // Keep current direction but set to idle
