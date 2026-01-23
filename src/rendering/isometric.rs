@@ -34,7 +34,6 @@ pub struct Tilesets {
 }
 
 pub fn grid_to_screen(grid_x: i32, grid_y: i32) -> Vec2 {
-    // Для ромбовидных изометрических тайлов 64×32
     let x = (grid_x - grid_y) as f32 * 32.0;
     let y = (grid_x + grid_y) as f32 * 16.0;
     Vec2::new(x, -y)
@@ -59,7 +58,7 @@ pub fn setup_isometric_camera(
             z_layer_manager.get_layer(EntityType::Camera)
         ),
     ));
-    println!("✅ Камера создана!");
+    println!("Camera created!");
 }
 
 pub fn load_tileset(
@@ -67,7 +66,6 @@ pub fn load_tileset(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    // ТАЙЛСЕТ 1: firstgid=1, columns=26, tilecount=650
     let texture1 = asset_server.load("isometric_tiles.png");
     let layout1 = TextureAtlasLayout::from_grid(
         UVec2::new(32, 32),

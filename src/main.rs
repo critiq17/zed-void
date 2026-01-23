@@ -28,7 +28,7 @@ fn main() {
         .add_plugins(DefaultPlugins
             .set(WindowPlugin {
                 primary_window: Some(Window {
-                    title: "Zed Void - Изометрия исправлена".to_string(),
+                    title: "Zed Void".to_string(),
                     resolution: (1920.0, 1080.0).into(),
                     resizable: true,
                     ..default()
@@ -73,9 +73,9 @@ fn setup_player(
     
     // ИСПРАВЛЕНО: 32×32 пикселя на кадр (не 16×16!)
     let atlas_layout = TextureAtlasLayout::from_grid(
-        UVec2::new(32, 32),  // Размер одного кадра
-        8,                   // 8 кадров по горизонтали
-        8,                   // 8 анимаций (рядов)
+        UVec2::new(32, 32), 
+        8,                   
+        8,                   
         None,
         None,
     );
@@ -88,17 +88,17 @@ fn setup_player(
                 layout: atlas_layout_handle,
                 index: 0,
             }),
-            custom_size: Some(Vec2::new(48.0, 64.0)),  // Увеличен размер
+            custom_size: Some(Vec2::new(48.0, 64.0)),  
             ..default()
         },
-        Transform::from_xyz(0.0, 0.0, 100.0),  // Z=100 (выше всех тайлов!)
+        Transform::from_xyz(0.0, 0.0, 100.0), 
         Player,
         DirectionalAnimation::new_player(),
         AnimationTimer(Timer::from_seconds(ANIMATION_SPEED, TimerMode::Repeating)),
         Direction::Down,
     )).id();
     
-    // Бита
+
     commands.entity(player_entity).with_children(|parent| {
         parent.spawn((
             Sprite {
@@ -106,11 +106,11 @@ fn setup_player(
                 custom_size: Some(Vec2::new(48.0, 16.0)),
                 ..default()
             },
-            Transform::from_xyz(25.0, 0.0, 1.0),  // Относительно игрока
+            Transform::from_xyz(25.0, 0.0, 1.0),  
             Visibility::Hidden,
             Bat,
         ));
     });
     
-    println!("✅ Игрок создан с анимацией!");
+    println!("Player created!");
 }
